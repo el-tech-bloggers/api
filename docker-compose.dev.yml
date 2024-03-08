@@ -7,6 +7,8 @@ services:
     depends_on:
       db:
         condition: service_started
+      migrator:
+        condition: service_completed_successfully
     ports:
       - 5000:5000
     volumes:
@@ -25,6 +27,28 @@ services:
       POSTGRES_PASSWORD: pewpew
       POSTGRES_DB: eltech-bloggers
       restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 10s
+      retries: 5432
+
+  migrator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.migration
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TERN_CONFIG: ./tern.conf
+      TERN_MIGRATIONS: ./migrations/
+      POSTGRES_PASSWORD: pewpew
+      POSTGRES_DB: eltech-bloggers
+      POSTGRES_HOST: db
+      # TODO: passs hashed passwords
+      ADMIN1_PASSWORD: pewpew
+      ADMIN2_PASSWORD: pewpew
 
   adminer:
     image: adminer
